@@ -8,6 +8,6 @@ const app = express();
 app.use(express.json());
 
 //Ajout des routes
-app.use("/api", router);
+app.use("/", router);
 
 module.exports = app;
