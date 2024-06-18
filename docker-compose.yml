@@ -1,0 +1,59 @@
+services:
+  api-gateway:
+    build:
+      context: ./API_Gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    develop:
+      watch:
+        - path: ./API_Gateway/
+          target: /app/
+          action: sync
+        - path: ./API_Gateway/package.json
+          action: rebuild
+    environment:
+      - PROXY_URI=http://node-mongoose:8081
+    depends_on:
+      node-mongoose:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+
+  node-mongoose:
+    build:
+      context: ./Auth
+      dockerfile: Dockerfile
+    container_name: node-mongoose
+    develop:
+      watch:
+        - path: ./Auth/
+          target: /app/
+          action: sync
+        - path: ./Auth/package.json
+          action: rebuild
+    environment:
+      - PORT=8081
+      - DB_SSL=false
+      - TOKEN_SECRET=MySuperSecretNoOneKnowsAbout
+      - TOKEN_EXPIRATION=3600
+      - DB_URI=mongodb://root:example@mongodb:27017/apiGatewayDockerDB?authSource=admin
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8081/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      - mongodb
+
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    volumes:
+      - db_data:/data/db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=example
+    ports:
+      - "27018:27017"
+volumes:
+  db_data:

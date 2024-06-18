@@ -1,9 +1,14 @@
+require("dotenv").config();
 const express = require("express");
-const app = express();
 const proxy = require("express-http-proxy");
+const port = process.env.PORT || 8080;
+const proxyURI = process.env.PROXY_URI;
 
-app.use("/api/auth", proxy("http://localhost:8080"));
+const app = express();
+app.use(express.json());
 
-app.listen(3000, () => {
-  console.log("API Gateway en cours d'exécution sur le port 3000");
+app.use("/api/auth", proxy(proxyURI));
+
+app.listen(port, () => {
+  console.log(`API Gateway en cours d'exécution sur le port ${port}`);
 });
