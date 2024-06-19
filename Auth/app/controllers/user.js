@@ -46,7 +46,7 @@ exports.login = async (req, res) => {
   }
 };
 
-exports.getUserInfoFromToken = async (req, res) => {
+exports.getUserInfoFromToken = (req, res) => {
   try {
     const { userId, userRole } = req.auth;
     res.status(200).json({ userId, userRole });
