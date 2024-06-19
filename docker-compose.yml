@@ -11,19 +11,20 @@ services:
           action: sync
         - path: ./API_Gateway/package.json
           action: rebuild
-    environment:
-      - PROXY_URI=http://node-mongoose:8081
+    env_file:
+      - ./API_Gateway/.env
     depends_on:
-      node-mongoose:
+      auth:
+        condition: service_healthy
+      product:
         condition: service_healthy
     ports:
       - "8080:8080"
-
-  node-mongoose:
+  auth:
     build:
       context: ./Auth
       dockerfile: Dockerfile
-    container_name: node-mongoose
+    container_name: auth
     develop:
       watch:
         - path: ./Auth/
@@ -31,29 +32,51 @@ services:
           action: sync
         - path: ./Auth/package.json
           action: rebuild
-    environment:
-      - PORT=8081
-      - DB_SSL=false
-      - TOKEN_SECRET=MySuperSecretNoOneKnowsAbout
-      - TOKEN_EXPIRATION=3600
-      - DB_URI=mongodb://root:example@mongodb:27017/apiGatewayDockerDB?authSource=admin
+    env_file:
+      - ./Auth/.env
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8081/ || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
     depends_on:
-      - mongodb
+      - authDb
+  product:
+    build:
+      context: ./Products
+      dockerfile: Dockerfile
+    container_name: product
+    develop:
+      watch:
+        - path: ./Products/
+          target: /app/
+          action: sync
+        - path: ./Products/package.json
+          action: rebuild
+    env_file:
+      - ./Products/.env
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8082/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      - productDb
 
-  mongodb:
+  authDb:
     image: mongo:latest
-    container_name: mongodb
+    container_name: authDb
     volumes:
-      - db_data:/data/db
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=root
-      - MONGO_INITDB_ROOT_PASSWORD=example
+      - db_data_auth:/data/db
     ports:
       - "27018:27017"
+  productDb:
+    image: mongo:latest
+    container_name: productDb
+    volumes:
+      - db_data_product:/data/db
+    ports:
+      - "27019:27017"
 volumes:
-  db_data:
+  db_data_auth:
+  db_data_product:
