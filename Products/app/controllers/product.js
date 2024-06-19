@@ -24,6 +24,11 @@ exports.getAll = async (req, res) => {
   try {
     let products = await Product.find();
     res.status(200).json(products);
+    if (!products) {
+      return res.status(404).json({
+        message: "Didn't find any product.",
+      });
+    }
   } catch (err) {
     res.status(500).json({
       message:
@@ -38,6 +43,11 @@ exports.getProduct = async (req, res) => {
     let product = await Product.findOne({
       _id: req.params.id,
     });
+    if (!product) {
+      return res.status(404).json({
+        message: "Didn't find the product you were looking for.",
+      });
+    }
     res.status(200).json(product);
   } catch (err) {
     res.status(500).json({
